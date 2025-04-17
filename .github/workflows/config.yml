@@ -7,9 +7,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout main repository
+        uses: actions/checkout@v2
 
-      - name: Checkout (copy) gh-pages repository to GitHub runner
+      - name: Checkout gh-pages branch
         uses: actions/checkout@v2
         with:
           ref: gh-pages
@@ -22,10 +23,14 @@ jobs:
         run: |
           docker-compose up --exit-code-from regression || true
 
-      - name: Copy history from gh-pages to allure-results
+      - name: Prepare Allure history
         run: |
-          sudo mkdir -p allure-results/history  # Создает директорию для истории Allure
-          sudo cp -R ./.github/gh-pages/history/* allure-results/history/
+          sudo mkdir -p allure-results/history
+          if [ -d "./.github/gh-pages/history" ] && [ "$(ls -A ./.github/gh-pages/history)" ]; then
+            sudo cp -R ./.github/gh-pages/history/* allure-results/history/
+          else
+            echo "No history files to copy."
+          fi
 
       - name: Generate Allure report
         run: |
@@ -33,7 +38,11 @@ jobs:
 
       - name: Update Allure history
         run: |
-          sudo cp -R allure-report/history/* ./.github/gh-pages/history/
+          if [ -d "allure-report/history" ] && [ "$(ls -A allure-report/history)" ]; then
+            sudo cp -R allure-report/history/* ./.github/gh-pages/history/
+          else
+            echo "No new history files to update."
+          fi
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.5
