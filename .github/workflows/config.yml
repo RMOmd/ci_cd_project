@@ -24,12 +24,20 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
 
+      - name: Build Docker image
+        run: |
+          docker-compose build
+
       - name: Run UI-tests via docker-compose
         env:
           LOGIN: ${{ secrets.LOGIN }}
           PASSWORD: ${{ secrets.PASSWORD }}
         run: |
           docker-compose up --exit-code-from regression || true
+
+      - name: Verify Allure installation
+        run: |
+          docker-compose run regression /bin/sh -c "allure --version"
 
       - name: Prepare Allure history
         run: |
@@ -39,10 +47,6 @@ jobs:
           else
             echo "No history files to copy."
           fi
-
-      - name: Verify Allure installation
-        run: |
-          docker-compose run regression /bin/sh -c "allure --version"
 
       - name: Generate Allure report
         run: |
